@@ -175,7 +175,7 @@ public class ScalaPluginLoader implements PluginLoader {
 
             } //end while - no more JarEntries
 
-            if (mainClassCandidate == null || mainClassCandidate.getMainClass().isEmpty()) {
+            if (mainClassCandidate == null || !mainClassCandidate.getMainClass().isPresent()) {
                 getScalaLoader().getLogger().warning("Could not find main class in file " + file.getName() + ". Did you annotate your main class with @Scala and is it public?");
                 getScalaLoader().getLogger().warning("Delegating to JavaPluginLoader...");
                 return getJavaPluginLoader().getPluginDescription(file);
@@ -324,8 +324,10 @@ public class ScalaPluginLoader implements PluginLoader {
      *             ForRemoval because as of January 2020 this method is inherently broken.
      *             The PluginClassLoader used to load JavaPlugins will now try to explicitly cast the ClassLoader
      *             of classes in the JavaPluginLoader's classes cache to PluginClassLoader - resulting in a ClassCastException.
+     *
+     * This is going to be removed in a future version!
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated
     public void forceLoadAllClasses(ScalaPlugin scalaPlugin) {
         try {
             getAllClasses(scalaPlugin).forEach(noop -> {});

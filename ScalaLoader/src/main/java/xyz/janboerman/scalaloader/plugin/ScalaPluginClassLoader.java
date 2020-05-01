@@ -7,6 +7,7 @@ import org.bukkit.UnsafeValues;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
 import org.bukkit.plugin.java.JavaPluginLoader;
+import sun.misc.IOUtils;
 import xyz.janboerman.scalaloader.ScalaLibraryClassLoader;
 import xyz.janboerman.scalaloader.event.transform.EventTransformations;
 import xyz.janboerman.scalaloader.event.transform.EventError;
@@ -51,7 +52,7 @@ public class ScalaPluginClassLoader extends URLClassLoader {
                     Server craftServer = currentPluginClassLoader.getServer();
                     try {
                         Class<?> commodoreClass = Class.forName(
-                                craftServer.getClass().getPackageName() + ".util.Commodore");
+                                craftServer.getClass().getCanonicalName() + ".util.Commodore");
                         String methodName = "convert";
                         MethodType methodType = MethodType.methodType(byte[].class, new Class<?>[]{byte[].class, boolean.class});
                         commodoreConvert = lookup.findStatic(commodoreClass, methodName, methodType);
@@ -271,7 +272,7 @@ public class ScalaPluginClassLoader extends URLClassLoader {
             if (jarEntry != null) {
                 //a classfile exists for the given class name
                 try (InputStream inputStream = jarFile.getInputStream(jarEntry)) {
-                    byte[] classBytes = inputStream.readAllBytes();
+                    byte[] classBytes = IOUtils.readAllBytes(inputStream);
 
                     try {
                         classBytes = EventTransformations.transform(classBytes, this);
@@ -292,7 +293,8 @@ public class ScalaPluginClassLoader extends URLClassLoader {
                     int dotIndex = name.lastIndexOf('.');
                     if (dotIndex != -1) {
                         String packageName = name.substring(0, dotIndex);
-                        if (getDefinedPackage(packageName) == null) {
+                        // Note: This method is going to be deprecated in favour of getDefinedPackage(String) in future Java versions, namely JDK 9.
+                        if (getPackage(packageName) == null) {
                             try {
                                 Manifest manifest = jarFile.getManifest();
                                 if (manifest != null) {
@@ -301,7 +303,7 @@ public class ScalaPluginClassLoader extends URLClassLoader {
                                     definePackage(packageName, null, null, null, null, null, null, null);
                                 }
                             } catch (IllegalArgumentException e) {
-                                if (getDefinedPackage(packageName) == null) {
+                                if (getPackage(packageName) == null) {
                                     throw new IllegalStateException("Cannot find package " + packageName);
                                 }
                             }
@@ -400,8 +402,10 @@ public class ScalaPluginClassLoader extends URLClassLoader {
      *
      * @deprecated JavaPlugins that try to find classes using the JavaPluginLoader expect to only find JavaPlugins
      * @see <a href="https://hub.spigotmc.org/stash/projects/SPIGOT/repos/bukkit/diff/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java?until=c3aeaea0fb88600643e01b6b4259e9d5da49e0e7">PluginClassLoader</a>
+     *
+     * This is going to be removed in a future version!
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated
     protected final void injectIntoJavaPluginLoaderScope(String className, Class<?> clazz) {
         PluginLoader likelyJavaPluginLoader = pluginLoader.getJavaPluginLoader();
         //TODO loop the plugin(class)loader hierarchy until we find a JavaPluginLoader?
@@ -436,8 +440,10 @@ public class ScalaPluginClassLoader extends URLClassLoader {
      *
      * @deprecated JavaPlugins that try to find classes using the JavaPluginLoader expect to only find JavaPlugins
      * @see <a href="https://hub.spigotmc.org/stash/projects/SPIGOT/repos/bukkit/diff/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java?until=c3aeaea0fb88600643e01b6b4259e9d5da49e0e7">PluginClassLoader</a>
+     *
+     * This is going to be removed in a future version!
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated
     protected final void removeFromJavaPluginLoaderScope(String className) {
         PluginLoader likelyJavaPluginLoader = pluginLoader.getJavaPluginLoader();
         if (likelyJavaPluginLoader instanceof JavaPluginLoader) {
